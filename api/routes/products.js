@@ -13,9 +13,9 @@ router.get("/",(req,resp,next)=>{
 					count: records.length,
 					products: records.map(prod=>{
 						return {
+							_id: prod._id,
 							name: prod.name,
 							price: prod.price,
-							_id: prod._id,
 							request: {
 								description: "For getting current product",
 								type: "GET",
