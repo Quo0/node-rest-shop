@@ -53,6 +53,36 @@ router.post("/", (req,resp,next)=>{
 		})
 });
 
+router.patch("/:id", (req,resp,next)=>{
+	const newData = {};
+
+	for(let prop in req.body){
+		newData[prop] = req.body[prop]
+	}
+
+	//patch validation
+	OrdersModel.schema.path("name").validate((val)=>{
+		return /\w{1,}/.test(val); // poor reg exp `\( -_-)/`
+	},"Invalid name!");
+	OrdersModel.schema.path("quantity").validate((val)=>{
+		return /^[0-9]{1,3}$/.test(val);
+	},"Invalid quantity! It must be between 1 and 1000");
+
+	const opts = {runValidators: true}
+
+	OrdersModel.update({_id: req.params.id}, { $set: newData }, opts, (err)=>{
+		if(err){ console.log(err)}
+	})
+		.then(
+			result=>{
+				resp.status(200).json(result)
+			})
+		.catch(
+			err=>{
+				resp.status(500).json({error:err})
+			})
+});
+
 router.delete("/:id", (req,resp,next)=>{
 	OrdersModel.remove({_id: req.params.id})
 		.then(

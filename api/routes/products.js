@@ -50,6 +50,7 @@ router.post("/",(req,resp,next)=>{
 			})
 		.catch(
 			err=>{
+				console.log(err.message)
 				resp.status(500).json({error:err})
 			})
 });
@@ -61,7 +62,19 @@ router.patch("/:id",(req,resp,next)=>{
 		newData[prop] = req.body[prop]
 	}
 
-	ProductsModel.update({_id: req.params.id} , { $set: newData })
+	// patch validation 
+	ProductsModel.schema.path("name").validate((val)=>{
+		return /\w{1,}/.test(val); // poor reg exp `\( -_-)/`
+	}, "Invalid name!");
+	ProductsModel.schema.path("price").validate((val)=>{
+		return /^[0-9]+\.{0,1}\d{0,2}$/.test(val)
+	}, "Invalid price!");
+
+	const opts = { runValidators: true };
+
+	ProductsModel.update({_id: req.params.id} , { $set: newData } , opts, (err)=>{
+		if(err){ console.log(err.errors)};
+	})
 		.then(
 			result=>{
 				// console.log("updated: ", result)
