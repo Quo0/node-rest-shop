@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const ordersSchema = mongoose.Schema({
 	_id: mongoose.Schema.Types.ObjectId,
-	productId: {
+	product: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Products",
 		required: [true, "Set the ID of the product you want to order!"]

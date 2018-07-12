@@ -8,6 +8,7 @@ const ProductsModel = require("../models/product");
 router.get("/", (req,resp,next)=>{
 	OrdersModel.find({})
 		// .select("-__v")
+		.populate("product","name")
 		.then(
 			records=>{
 				const responseData = {
@@ -15,7 +16,7 @@ router.get("/", (req,resp,next)=>{
 					orders: records.map(order=>{
 						return {
 							_id: order._id,
-							productId: order.productId,
+							product: order.product,
 							quantity: order.quantity,
 							request: {
 								order:{
@@ -26,7 +27,7 @@ router.get("/", (req,resp,next)=>{
 								product:{
 									description: "For getting current product",
 									type: "GET",
-									ulr: `http://localhost:4000/products/${order.productId}`
+									ulr: `http://localhost:4000/products/${order.product._id}`
 								}
 							}
 						}
@@ -43,6 +44,7 @@ router.get("/", (req,resp,next)=>{
 router.get("/:id", (req,resp,next)=>{
 	OrdersModel.findById(req.params.id)
 		.select("-__v")
+		.populate("product","-__v")
 		.then(
 			order=>{
 				if(order){
@@ -72,7 +74,7 @@ router.get("/:id", (req,resp,next)=>{
 });
 
 router.post("/", (req,resp,next)=>{
-	ProductsModel.findById(req.body.productId)
+	ProductsModel.findById(req.body.product)
 		.then(
 			product=>{
 				if(!product){
@@ -83,7 +85,7 @@ router.post("/", (req,resp,next)=>{
 				};
 				const order = new OrdersModel({
 					_id: mongoose.Types.ObjectId(),
-					productId: req.body.productId,
+					product: req.body.product,
 					quantity: req.body.quantity
 				});
 				return order.save()
@@ -94,7 +96,7 @@ router.post("/", (req,resp,next)=>{
 					message: "Order created succesfully",
 					createdOrder: {
 						_id: order._id,
-						productId: order.productId,
+						product: order.product,
 						quantity: order.quantity,
 						request: {
 							description: "For getting all orders",
@@ -106,8 +108,9 @@ router.post("/", (req,resp,next)=>{
 			})
 		.catch(
 			err=>{
+				console.log(err);
 				resp.status(500).json({
-					message: "Can't find the product with such productId!"
+					message: "Can't find the product with such ID!"
 				});
 			})
 	
