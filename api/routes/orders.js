@@ -6,9 +6,25 @@ const OrdersModel = require("../models/order");
 
 router.get("/", (req,resp,next)=>{
 	OrdersModel.find({})
+		// .select("-__v")
 		.then(
 			records=>{
-				resp.status(200).json(records)
+				const responseData = {
+					count: records.length,
+					orders: records.map(order=>{
+						return {
+							name: order.name,
+							quantity: order.quantity,
+							_id: order._id,
+							request: {
+								description: "For getting current order",
+								type: "GET",
+								ulr: `http://localhost:4000/orders/${order._id}`
+							}
+						}
+					})
+				}
+				resp.status(200).json(responseData)
 			})
 		.catch(
 			err=>{
@@ -18,13 +34,26 @@ router.get("/", (req,resp,next)=>{
 
 router.get("/:id", (req,resp,next)=>{
 	OrdersModel.findById(req.params.id)
+		.select("-__v")
 		.then(
 			order=>{
 				if(order){
-					resp.status(200).json(order)					
+					resp.status(200).json({
+						order: order,
+						request: {
+							description: "For getting all orders",
+							type: "GET",
+							url: "http://localhost:4000/orders"
+						}
+					})					
 				}else{
 					resp.status(404).json({
-						message: "Can't find order with such Id in database"
+						message: "Can't find order with such Id in database",
+						request: {
+							description: "For getting all orders",
+							type: "GET",
+							url: "http://localhost:4000/orders"
+						}
 					})
 				}
 			})
@@ -44,8 +73,17 @@ router.post("/", (req,resp,next)=>{
 		.then(
 			order=>{
 				resp.status(201).json({
-					"message" : "handling post /orders",
-					createdOrder: order
+					message: "Order created succesfully",
+					createdOrder: {
+						name: order.name,
+						quantity: order.quantity,
+						_id: order._id,
+						request: {
+							description: "For getting all orders",
+							type: "GET",
+							url: "http://localhost:4000/orders"
+						}
+					}
 				})
 			})
 		.catch(err=>{
@@ -75,7 +113,14 @@ router.patch("/:id", (req,resp,next)=>{
 	})
 		.then(
 			result=>{
-				resp.status(200).json(result)
+				resp.status(200).json({
+					message: "You succesfully updated the order",
+					request: {
+						description: "For getting updated order",
+						type:"GET",
+						url: `http://localhost:4000/orders/${req.params.id}`
+					}
+				})
 			})
 		.catch(
 			err=>{
@@ -87,7 +132,14 @@ router.delete("/:id", (req,resp,next)=>{
 	OrdersModel.remove({_id: req.params.id})
 		.then(
 			result=>{
-				resp.status(200).json(result)
+				resp.status(200).json({
+					message: "You succesfully deleted the order",	
+					request: {
+						description: "For getting all orders",
+						type:"GET",
+						url: "http://localhost:4000/orders"
+					}
+				})
 			})
 		.catch(
 			err=>{

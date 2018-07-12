@@ -6,9 +6,25 @@ const ProductsModel = require("../models/product");
 
 router.get("/",(req,resp,next)=>{
 	ProductsModel.find({})
+		// .select("-__v")
 		.then(
 			records=>{
-				resp.status(200).json(records)
+				const responseData = {
+					count: records.length,
+					products: records.map(prod=>{
+						return {
+							name: prod.name,
+							price: prod.price,
+							_id: prod._id,
+							request: {
+								description: "For getting current product",
+								type: "GET",
+								url: `http://localhost:4000/products/${prod._id}`
+							}
+						} 
+					}),
+				}
+				resp.status(200).json(responseData)
 			})
 		.catch(
 			err=>{
@@ -18,10 +34,18 @@ router.get("/",(req,resp,next)=>{
 
 router.get("/:id",(req,resp,next)=>{
 	ProductsModel.findById(req.params.id)
+		.select("-__v")
 		.then(
 			product=>{
 				if(product){
-					resp.status(200).json(product)					
+					resp.status(200).json({
+						product: product,
+						request: {
+							description: "For getting all the products",
+							type: "GET",
+							url: "http://localhost:4000/products/"
+						}
+					})					
 				}else{
 					resp.status(404).json({
 						message: "Can't find product with such Id in database"
@@ -44,8 +68,17 @@ router.post("/",(req,resp,next)=>{
 		.then(
 			product=>{
 				resp.status(201).json({
-					"message" : "handling POST /products",
-					createdProduct: product
+					"message" : "Product created succesfully",
+					createdProduct: {
+						name: product.name,
+						price: product.price,
+						_id: product._id,
+						request: {
+							description: "For getting all the products",
+							type: "GET",
+							url: `http://localhost:4000/products`
+						}
+					}
 				})
 			})
 		.catch(
@@ -78,7 +111,14 @@ router.patch("/:id",(req,resp,next)=>{
 		.then(
 			result=>{
 				// console.log("updated: ", result)
-				resp.status(200).json(result)
+				resp.status(200).json({
+					message: "You succesfully updated the product",
+					request: {
+						description: "For getting updated product",
+						type:"GET",
+						url: `http://localhost:4000/products/${req.params.id}`
+					}
+				})
 			})
 		.catch(
 			err=>{
@@ -90,7 +130,14 @@ router.delete("/:id",(req,resp,next)=>{
 	ProductsModel.remove({_id: req.params.id})
 		.then(
 			result=>{
-				resp.status(200).json(result)
+				resp.status(200).json({
+					message: "You succesfully deleted the product",
+					request: {
+						description: "For getting all products",
+						type:"GET",
+						url: `http://localhost:4000/products`
+					}
+				})
 			})
 		.catch(
 			err=>{
