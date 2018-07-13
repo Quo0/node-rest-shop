@@ -18,6 +18,7 @@ mongoose.connect(`mongodb://admin:${process.env.MONGO_ATLAS_PW}@node-rest-shop-s
 	mongoOptions
 );
 
+app.use("/uploads", express.static("./uploads"));
 app.use(morgan("dev"));
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(bodyParser.json());

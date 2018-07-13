@@ -1,6 +1,34 @@
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
+const multer = require("multer");
+
+// multer settings
+const storage = multer.diskStorage({
+	destination: function(req,file,cb){
+		cb(null, './uploads') // errors = null
+	},
+	filename: function(req,file,cb){
+		const newFileName = `${new Date().toLocaleDateString()}__${new Date().toLocaleTimeString().replace(/:/g,"-")}__${file.originalname}`;
+		cb(null, newFileName)
+	}
+
+});
+const fileFilter = (req,file,cb)=>{
+	if(file.mimetype === "image/jpeg" || file.mimetype === "image/png"){
+		cb(null,true);
+	} else {
+		cb(null,false);
+	}
+};
+const upload = multer({
+	storage: storage,
+	limits: {
+		fileSize: 1024 * 1024 * 5
+	},
+	fileFilter: fileFilter
+});
+//end of multer settings
 
 const ProductsModel = require("../models/product");
 
@@ -16,6 +44,7 @@ router.get("/",(req,resp,next)=>{
 							_id: prod._id,
 							name: prod.name,
 							price: prod.price,
+							productImage: prod.productImage,
 							request: {
 								description: "For getting current product",
 								type: "GET",
@@ -58,11 +87,16 @@ router.get("/:id",(req,resp,next)=>{
 			})
 });
 
-router.post("/",(req,resp,next)=>{
+router.post("/", upload.single("productImage"),(req,resp,next)=>{
+	console.log(req.file.path)
+	let properReqFilePath = "" + req.file.path
+	properReqFilePath = properReqFilePath.replace(/\\/g,"\/");
+	console.log(properReqFilePath)
 	const product = new ProductsModel({
 		_id: mongoose.Types.ObjectId(),
 		name: req.body.name,
-		price: req.body.price
+		price: req.body.price,
+		productImage: properReqFilePath
 	});
 	product.save()
 		.then(
@@ -73,6 +107,7 @@ router.post("/",(req,resp,next)=>{
 						name: product.name,
 						price: product.price,
 						_id: product._id,
+						productImage: product.productImage,
 						request: {
 							description: "For getting all the products",
 							type: "GET",
@@ -95,7 +130,7 @@ router.patch("/:id",(req,resp,next)=>{
 		newData[prop] = req.body[prop]
 	}
 
-	// patch validation 
+	// PATCH validation 
 	ProductsModel.schema.path("name").validate((val)=>{
 		return /\w{1,}/.test(val); // poor reg exp `\( -_-)/`
 	}, "Invalid name!");
@@ -107,10 +142,16 @@ router.patch("/:id",(req,resp,next)=>{
 
 	ProductsModel.update({_id: req.params.id} , { $set: newData } , opts, (err)=>{
 		if(err){ console.log(err.errors)};
+		if(Object.keys(newData).length < 1){
+			resp.status(500).json({
+				message: "You changed nothing. Please provid proper request body"
+			})
+			return
+		}
 	})
 		.then(
 			result=>{
-				// console.log("updated: ", result)
+				console.log(newData.length)
 				resp.status(200).json({
 					message: "You succesfully updated the product",
 					request: {

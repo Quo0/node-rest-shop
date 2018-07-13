@@ -22,6 +22,10 @@ const productsSchema = mongoose.Schema({
 			message: "The price must be a number! ( 12 / 10.5 / 10. 45 )"
 		},
 		required: [true, "You must set the product's price"]
+	},
+	productImage: {
+		type: String,
+		required: [true, "You must set the product's image"]
 	}
 },{collection:"Products"});
 

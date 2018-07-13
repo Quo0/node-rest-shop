@@ -11,9 +11,11 @@ router.get("/", (req,resp,next)=>{
 		.populate("product","name")
 		.then(
 			records=>{
+				console.log(records)
 				const responseData = {
 					count: records.length,
 					orders: records.map(order=>{
+						console.log(order)
 						return {
 							_id: order._id,
 							product: order.product,
@@ -37,6 +39,7 @@ router.get("/", (req,resp,next)=>{
 			})
 		.catch(
 			err=>{
+				console.log(err);
 				resp.status(500).json({error: err})
 			})
 });
